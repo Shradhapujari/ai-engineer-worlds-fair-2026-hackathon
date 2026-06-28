@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniForge × The Self-Improvement Stack</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#121a2e; --panel2:#0f1525;
+    --ink:#e8edf7; --mut:#8a98b8; --line:#26324d;
+    --c1:#5b8cff; --c2:#37d6a0; --c3:#ffb547; --c4:#ff6b8a;
+    --glow:0 0 0 1px var(--line), 0 18px 40px -22px #000;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 700px at 70% -10%,#16224a 0%,var(--bg) 55%);color:var(--ink);
+    -webkit-font-smoothing:antialiased;padding:48px 20px 80px}
+  .wrap{max-width:1040px;margin:0 auto}
+  .tag{display:inline-block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--c2);
+    border:1px solid var(--line);border-radius:999px;padding:5px 12px;margin-bottom:18px}
+  h1{font-size:40px;line-height:1.1;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+  h1 .hi{background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:18px;max-width:720px;margin:0 0 40px}
+  .sub b{color:var(--ink)}
+  h2{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:54px 0 18px;font-weight:700}
+
+  /* theme decode */
+  .decode{background:var(--panel);border-radius:18px;padding:24px 26px;box-shadow:var(--glow)}
+  .decode .q{font-size:20px;font-weight:700;margin:0 0 6px}
+  .decode .a{color:var(--mut);margin:0}
+  .decode .a b{color:var(--c2)}
+
+  /* pillars */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .card{background:var(--panel);border-radius:16px;padding:20px 22px;box-shadow:var(--glow);position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cc)}
+  .card .k{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cc);font-weight:700;margin-bottom:8px}
+  .card h3{margin:0 0 8px;font-size:19px}
+  .card p{margin:0;color:var(--mut);font-size:15px}
+  .card p .x{color:var(--ink);font-weight:600}
+  .c1{--cc:var(--c1)} .c2{--cc:var(--c2)} .c3{--cc:var(--c3)} .c4{--cc:var(--c4)}
+
+  /* loop */
+  .loop{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;background:var(--panel2);
+    border-radius:16px;padding:22px;box-shadow:var(--glow)}
+  .step{flex:1 1 0;min-width:118px;background:#16203a;border:1px solid var(--line);border-radius:12px;
+    padding:14px 12px;text-align:center;position:relative}
+  .step .n{font-size:11px;color:var(--mut);letter-spacing:.1em}
+  .step .t{font-weight:700;margin-top:4px;font-size:14px}
+  .step .d{font-size:12px;color:var(--mut);margin-top:4px}
+  .step.gate{border-color:#5a3b2a;background:#241a14}
+  .step.learn{border-color:#1f5145;background:#11241f}
+  .arrow{align-self:center;color:var(--mut);font-size:18px;flex:0 0 auto}
+  .loopnote{margin-top:14px;font-size:13px;color:var(--mut)}
+  .loopnote b{color:var(--c2)}
+
+  /* curve */
+  .curve{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:center;
+    background:var(--panel);border-radius:18px;padding:24px 26px;box-shadow:var(--glow)}
+  .curve h3{margin:0 0 6px;font-size:22px}
+  .curve p{color:var(--mut);margin:0 0 14px}
+  .metric{display:flex;gap:18px;flex-wrap:wrap}
+  .metric div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .metric .big{font-size:22px;font-weight:800}
+  .metric .lab{font-size:11px;color:var(--mut);letter-spacing:.08em;text-transform:uppercase}
+  .c-blue{color:var(--c1)} .c-grn{color:var(--c2)}
+  svg{width:100%;height:auto;display:block}
+
+  .foot{margin-top:46px;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+  .foot b{color:var(--ink)}
+  @media(max-width:720px){.grid,.curve{grid-template-columns:1fr}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">AI Engineer World's Fair 2026 · Theme: The Self-Improvement Stack</span>
+  <h1>OmniForge is a system that <span class="hi">fixes itself</span><br>and gets better every time it does.</h1>
+  <p class="sub">The theme asks for a <b>self-improvement stack</b> — software that catches its own mistakes,
+  repairs them with no human, and <b>remembers</b> so it's faster next time. OmniForge is exactly that loop,
+  wrapped around any live AI app.</p>
+
+  <h2>What "Self-Improvement Stack" means (plainly)</h2>
+  <div class="decode">
+    <p class="q">A system that improves <i>itself</i>, while running, without a person in the loop.</p>
+    <p class="a">Not "a person makes it better." The system <b>catches its own failure</b>, <b>writes its own fix</b>,
+    <b>tests the fix safely</b>, and <b>learns from it</b> — so the same failure never costs it again. The "stack" =
+    that whole reusable healing layer you drop under any app.</p>
+  </div>
+
+  <h2>The 4 ways OmniForge hits the theme</h2>
+  <div class="grid">
+    <div class="card c1">
+      <div class="k">Self-Improvement</div>
+      <h3>It heals itself, live</h3>
+      <p>App throws an unhandled error → OmniForge catches it <span class="x">before the crash</span>, hot-swaps a fix
+      into the running process, app recovers. <span class="x">No human, no restart.</span></p>
+    </div>
+    <div class="card c2">
+      <div class="k">Recursive Intelligence</div>
+      <h3>AI repairing AI</h3>
+      <p>Gemini 3.5 Flash <span class="x">writes the code</span> that patches the AI app OmniForge is supervising.
+      Intelligence improving a running intelligent system — the recursive part of the theme.</p>
+    </div>
+    <div class="card c3">
+      <div class="k">Continual Learning</div>
+      <h3>It remembers every fix</h3>
+      <p>Each validated patch is cached in local SQLite by error signature. Same error again →
+      <span class="x">instant fix, zero model call.</span> Proof it actually <i>learned</i>.</p>
+    </div>
+    <div class="card c4">
+      <div class="k">The "Stack"</div>
+      <h3>A safe, reusable layer</h3>
+      <p>Not a one-off script — a full guarded loop (scan → sandbox → swap → remember) that sits
+      <span class="x">under any AI app</span> as a self-healing runtime. That's the stack.</p>
+    </div>
+  </div>
+
+  <h2>The self-improvement loop</h2>
+  <div class="loop">
+    <div class="step"><div class="n">01 CATCH</div><div class="t">Guard</div><div class="d">grab error pre-crash</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">02 DIAGNOSE</div><div class="t">Gemini patch</div><div class="d">diff + repro test</div></div>
+    <div class="arrow">→</div>
+    <div class="step gate"><div class="n">03 PROVE</div><div class="t">Safety gates</div><div class="d">scan + sandbox</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">04 SWAP</div><div class="t">Hot-swap</div><div class="d">fix live, no restart</div></div>
+    <div class="arrow">→</div>
+    <div class="step learn"><div class="n">05 LEARN</div><div class="t">Fix memory</div><div class="d">cache by signature</div></div>
+  </div>
+  <p class="loopnote">↺ <b>Next time</b> the same error appears, step 5's memory short-circuits steps 2–3 →
+  fix applied in &lt;1s with <b>no model call</b>. The loop literally tightens on itself.</p>
+
+  <h2>Why it qualifies: the improvement curve</h2>
+  <div class="curve">
+    <div>
+      <h3>"The more it runs, the faster and cheaper it heals."</h3>
+      <p>First time it sees an error it pays ~10s and one model call. Every repeat after that is near-free.
+      That downward curve <i>is</i> the self-improvement.</p>
+      <div class="metric">
+        <div><div class="big c-blue">~10s</div><div class="lab">first heal (cache miss)</div></div>
+        <div><div class="big c-grn">&lt;1s</div><div class="lab">repeat heal (cache hit)</div></div>
+        <div><div class="big c-grn">$0</div><div class="lab">cost on repeat</div></div>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 200" role="img" aria-label="Heal cost dropping over repeated errors">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#37d6a0" stop-opacity=".35"/>
+            <stop offset="1" stop-color="#37d6a0" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="40" y1="20" x2="40" y2="170" stroke="#26324d"/>
+        <line x1="40" y1="170" x2="300" y2="170" stroke="#26324d"/>
+        <text x="10" y="30" fill="#8a98b8" font-size="10">cost</text>
+        <text x="250" y="188" fill="#8a98b8" font-size="10">runs →</text>
+        <path d="M40,40 C90,150 150,162 300,166 L300,170 L40,170 Z" fill="url(#g)"/>
+        <path d="M40,40 C90,150 150,162 300,166" fill="none" stroke="#37d6a0" stroke-width="3"/>
+        <circle cx="40" cy="40" r="5" fill="#5b8cff"/>
+        <text x="48" y="42" fill="#5b8cff" font-size="10">1st: model call</text>
+        <circle cx="300" cy="166" r="5" fill="#37d6a0"/>
+        <text x="205" y="158" fill="#37d6a0" font-size="10">repeats: ~free</text>
+      </svg>
+    </div>
+  </div>
+
+  <p class="foot"><b>One sentence for judges:</b> OmniForge is a self-improvement stack —
+  an AI that catches a live app's failures, writes &amp; safely ships its own patches, and remembers each fix
+  so the system gets faster and cheaper every run. <b>Recursive intelligence + continual learning, in production.</b></p>
+
+</div>
+</body>
+</html>

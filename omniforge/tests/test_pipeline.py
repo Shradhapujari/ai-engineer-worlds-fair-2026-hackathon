@@ -1,6 +1,7 @@
 import json
 
 from omniforge.healer.pipeline import make_gated_fixer
+from omniforge.memory import store
 from omniforge.memory.signature import signature_hash
 from omniforge.models.schemas import IncidentContext
 
@@ -28,11 +29,18 @@ REPRO = 'def test_x():\n    assert True\n'
 class FakeClient:
     def __init__(self, diff):
         self._diff = diff
+        self.calls = 0
 
     def generate_text(self, prompt):
+        self.calls += 1
         return json.dumps(
             {"root_cause": "rc", "unified_diff": self._diff, "repro_test": REPRO}
         )
+
+
+class ExplodingClient:
+    def generate_text(self, prompt):
+        raise AssertionError("model must not be called on a cache hit")
 
 
 def _ctx(path):
@@ -99,3 +107,37 @@ def test_unapplicable_diff_escalates(tmp_path):
     out = fixer(_ctx(path))
     assert out is None
     assert escalations  # escalated with a reason
+
+
+def _conn(tmp_path):
+    db = str(tmp_path / "mem.db")
+    store.init_db(db)
+    return store.connect(db)
+
+
+def test_first_heal_calls_model_and_remembers(tmp_path):
+    path = _write_source(tmp_path)
+    conn = _conn(tmp_path)
+    client = FakeClient(CLEAN_DIFF)
+    fixer = make_gated_fixer(client=client, runner=lambda d: (True, "passed"),
+                             conn=conn)
+    ctx = _ctx(path)
+    out = fixer(ctx)
+    assert 'd["temperature_celsius"]' in out
+    assert client.calls == 1
+    assert store.lookup(conn, ctx) is not None  # remembered
+
+
+def test_repeat_error_heals_from_memory_no_model_call(tmp_path):
+    path = _write_source(tmp_path)
+    conn = _conn(tmp_path)
+    ctx = _ctx(path)
+    # seed memory via a first heal
+    make_gated_fixer(client=FakeClient(CLEAN_DIFF),
+                     runner=lambda d: (True, "passed"), conn=conn)(ctx)
+    # second occurrence: model must not be called
+    fixer = make_gated_fixer(client=ExplodingClient(),
+                             runner=lambda d: (True, "passed"), conn=conn)
+    out = fixer(ctx)
+    assert 'd["temperature_celsius"]' in out
+    assert store.hit_count(conn, ctx.signature_hash) >= 1

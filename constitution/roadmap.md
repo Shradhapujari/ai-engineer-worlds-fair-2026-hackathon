@@ -18,11 +18,11 @@
 | 1 | Closed loop (hardcoded) | DONE | M1 Min Viable Demo ✓ | E2E reload works |
 | 2 | Real patch gen | DONE | M2 Intelligence ✓ | Generated patch heals live break |
 | 3 | Safety rails | DONE | M3 Trustworthy ✓ | Bad patch rejected + escalated |
-| 4 | Memory / continual learning | PLANNED | M4 Self-Improve | Cache hit = instant fix, no model call |
+| 4 | Memory / continual learning | DONE | M4 Self-Improve ✓ | Cache hit = instant fix, no model call |
 | 5 | Rollback + circuit breaker | PLANNED | M5 Safe | Regression auto-rolls-back |
 | 6 | Demo + video | PLANNED | M6 Ship | Two clean run-throughs |
 
-**Overall:** 4/7 phases done. Next = Phase 4 (memory / continual learning).
+**Overall:** 5/7 phases done. Next = Phase 5 (rollback + circuit breaker + audit).
 
 ---
 
@@ -75,13 +75,14 @@
 **Note:** bandit added to venv; `python`→`sys.executable` for subprocess. Docker/semgrep not present locally — sandbox local-runner fallback keeps demo path alive (Constitution II).
 
 ## Phase 4 — Memory / Continual Learning
-**Status:** PLANNED · **Milestone:** M4 Self-Improve · **Depends:** P3
+**Status:** DONE · **Milestone:** M4 Self-Improve ✓ · **Depends:** P3
 **Goal:** the "gets faster as it runs" payoff.
-- ☐ SQLite store (`memory/store.py`)
-- ☐ Signature normalization + hash (`memory/signature.py`)
-- ☐ Exact-match lookup → skip model → hot-swap (quick re-verify)
-- ☐ Track + surface `hit_count`
-**Exit gate:** cache hit = instant fix, no model call.
+- ☑ SQLite store (`memory/store.py`): `remember`, `lookup`, `save_incident/patch`, `hit_count`. Dict/list fields JSON-serialized; INSERT OR REPLACE idempotent; re-remember preserves accumulated hits (COALESCE).
+- ☑ Signature normalization + hash (`memory/signature.py`) — built P1, reused as memory key.
+- ☑ Exact-match lookup → skip model → quick sandbox re-verify (`pipeline.make_gated_fixer(conn=...)`): cache hit reuses stored diff, re-verified in sandbox, NO model call; stale diff falls through to regen.
+- ☑ Track + surface `hit_count`: starts 0 on remember, +1 per reuse.
+- ☑ TDD: store(6) + pipeline memory-path(2, incl. ExplodingClient proving zero model calls on hit) = 8 new tests, 61 total green.
+**Exit gate:** cache hit = instant fix, no model call ✓ — repeat signature heals from SQLite, model client never invoked, hit_count ticks up.
 
 ## Phase 5 — Rollback + Circuit Breaker + Audit
 **Status:** PLANNED · **Milestone:** M5 Safe · **Depends:** P4
@@ -121,6 +122,7 @@
 
 ## Changelog
 
+- 2026-06-27 — **Phase 4 DONE (M4 ✓).** Fix-memory built TDD: `memory/store.py` gains `remember`/`lookup`/`save_incident`/`save_patch`/`hit_count` (JSON-serialized dict fields, idempotent upserts, COALESCE preserves hits on re-remember). `pipeline.make_gated_fixer(conn=...)` short-circuits the model on a signature hit — reuses the stored diff, re-verifies in the sandbox, zero model cost; remembers every fresh validated fix. +8 tests (61 total) incl. ExplodingClient asserting no model call on cache hit. Next: Phase 5 rollback/breaker/audit.
 - 2026-06-27 — **Phase 3 DONE (M3 ✓).** Trust boundary built TDD: `healer/scanner.py` (policy gate: scope/size/self-edit/dangerous-sinks/network-import denylist + best-effort bandit), `healer/sandbox.py` (injectable runner; `local_runner` subprocess-pytest fallback since no Docker), `healer/pipeline.py` (`make_gated_fixer` wires diagnose→patch→scan→sandbox into Guard's Fixer contract; any gate fail → escalate, never deploy). +20 unit tests (53 total) all green. bandit installed; semgrep/Docker deferred (heavy/absent) — local fallbacks keep demo path alive. Next: Phase 4 memory.
 - 2026-06-27 — roadmap promoted to living doc; phases + milestones + checklists added.
 - 2026-06-27 — Phase 0 IN PROGRESS: scaffold, SQLite init, breakable demo built + verified locally (`run_demo.py` shows agent working then KeyError crash). Pending manual: DO droplet + Gemini key.

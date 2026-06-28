@@ -17,12 +17,12 @@
 | 0 | Setup | DONE | M0 Foundation ✓ | Droplet runs; demo app callable |
 | 1 | Closed loop (hardcoded) | DONE | M1 Min Viable Demo ✓ | E2E reload works |
 | 2 | Real patch gen | DONE | M2 Intelligence ✓ | Generated patch heals live break |
-| 3 | Safety rails | PLANNED | M3 Trustworthy | Bad patch rejected + escalated |
+| 3 | Safety rails | DONE | M3 Trustworthy ✓ | Bad patch rejected + escalated |
 | 4 | Memory / continual learning | PLANNED | M4 Self-Improve | Cache hit = instant fix, no model call |
 | 5 | Rollback + circuit breaker | PLANNED | M5 Safe | Regression auto-rolls-back |
 | 6 | Demo + video | PLANNED | M6 Ship | Two clean run-throughs |
 
-**Overall:** 3/7 phases done. Next = Phase 3 (safety rails: scan + sandbox).
+**Overall:** 4/7 phases done. Next = Phase 4 (memory / continual learning).
 
 ---
 
@@ -64,13 +64,15 @@
 **Exit gate:** generated patch heals live break ✓ — real Gemini caught crash → patched → hot-swapped → recovered, no human.
 
 ## Phase 3 — Safety Rails
-**Status:** PLANNED · **Milestone:** M3 Trustworthy · **Depends:** P2
+**Status:** DONE · **Milestone:** M3 Trustworthy ✓ · **Depends:** P2
 **Goal:** trust boundary — generated code never runs prod unscanned.
-- ☐ Static scan: semgrep + bandit (`healer/scanner.py`)
-- ☐ Policy gate: scope, max diff size, import allowlist, no self-edit
-- ☐ Docker sandbox validation (`healer/sandbox.py`): replay input + repro_test + suite
-- ☐ Reject → escalate + log, never deploy
-**Exit gate:** bad patch rejected + escalated.
+- ☑ Static scan: bandit, best-effort + injected (`healer/scanner.py`). semgrep deferred (heavy); AST/regex policy gate is the deterministic core.
+- ☑ Policy gate: scope, max diff size (200), dangerous-sink + network-import denylist, no self-edit (`_policy_gate`)
+- ☑ Sandbox validation (`healer/sandbox.py`): replay repro_test on patched source, before/after capture. Injectable `runner` — `local_runner` (subprocess pytest, no Docker) default; Docker runner drops in with same signature.
+- ☑ Reject → escalate (never deploy): `healer/pipeline.py::make_gated_fixer` composes diagnose→patch→scan→sandbox into the Guard `Fixer` contract; any gate fail returns None → Guard escalates + audits.
+- ☑ TDD: scanner(11) + sandbox(5, incl. real pytest) + pipeline(4) = 20 new tests, all green.
+**Exit gate:** bad patch rejected + escalated ✓ — dangerous diff (eval) blocked by scan, failing repro blocked by sandbox, both escalate.
+**Note:** bandit added to venv; `python`→`sys.executable` for subprocess. Docker/semgrep not present locally — sandbox local-runner fallback keeps demo path alive (Constitution II).
 
 ## Phase 4 — Memory / Continual Learning
 **Status:** PLANNED · **Milestone:** M4 Self-Improve · **Depends:** P3
@@ -119,6 +121,7 @@
 
 ## Changelog
 
+- 2026-06-27 — **Phase 3 DONE (M3 ✓).** Trust boundary built TDD: `healer/scanner.py` (policy gate: scope/size/self-edit/dangerous-sinks/network-import denylist + best-effort bandit), `healer/sandbox.py` (injectable runner; `local_runner` subprocess-pytest fallback since no Docker), `healer/pipeline.py` (`make_gated_fixer` wires diagnose→patch→scan→sandbox into Guard's Fixer contract; any gate fail → escalate, never deploy). +20 unit tests (53 total) all green. bandit installed; semgrep/Docker deferred (heavy/absent) — local fallbacks keep demo path alive. Next: Phase 4 memory.
 - 2026-06-27 — roadmap promoted to living doc; phases + milestones + checklists added.
 - 2026-06-27 — Phase 0 IN PROGRESS: scaffold, SQLite init, breakable demo built + verified locally (`run_demo.py` shows agent working then KeyError crash). Pending manual: DO droplet + Gemini key.
 - 2026-06-27 — Vertex AI auth wired: ADC via gcloud, gemini-3.5-flash on `global` endpoint verified end-to-end. DO MCP server connected (`@digitalocean/mcp`). Only DO droplet remains for Phase 0.

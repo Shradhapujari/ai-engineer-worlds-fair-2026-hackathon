@@ -33,3 +33,16 @@ class Patch(BaseModel):
     rollback_of: Optional[str] = None
     model_used: Optional[str] = None
     latency_ms: Optional[int] = None
+
+
+class ScanResult(BaseModel):
+    """Security scanner / policy gate verdict (architecture spec §2.5)."""
+    passed: bool
+    reasons: list[str] = Field(default_factory=list)  # why it was rejected
+
+
+class SandboxResult(BaseModel):
+    """Isolated sandbox validation verdict (architecture spec §2.7)."""
+    passed: bool
+    before: str = ""  # repro output on the original (failing) source
+    after: str = ""   # repro output on the patched source

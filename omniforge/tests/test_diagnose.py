@@ -28,11 +28,23 @@ def make_ctx():
     )
 
 
+ORIGINAL_SRC = 'def answer_weather(city):\n    return data["temp_c"]\n'
+FIXED_SRC = 'def answer_weather(city):\n    return data["temperature_celsius"]\n'
+
 VALID_JSON = json.dumps({
     "root_cause": "Vendor renamed temp_c to temperature_celsius",
-    "unified_diff": "--- a/buggy_agent.py\n+++ b/buggy_agent.py\n@@\n-    return data[\"temp_c\"]\n+    return data[\"temperature_celsius\"]",
+    "fixed_source": FIXED_SRC,
     "repro_test": "def test_weather():\n    assert answer_weather('london')",
 })
+
+
+def _parse(raw, **kw):
+    kw.setdefault("incident_id", "inc-1")
+    kw.setdefault("model", "gemini-3.5-flash")
+    kw.setdefault("latency_ms", 1200)
+    kw.setdefault("original_source", ORIGINAL_SRC)
+    kw.setdefault("filename", "buggy_agent.py")
+    return parse_patch(raw, **kw)
 
 
 class FakeClient:
@@ -59,7 +71,7 @@ def test_build_prompt_includes_incident_context():
 
 def test_build_prompt_states_hard_constraints():
     p = build_prompt(make_ctx(), prior=None).lower()
-    assert "unified_diff" in p and "repro_test" in p and "root_cause" in p
+    assert "fixed_source" in p and "repro_test" in p and "root_cause" in p
     assert "json" in p                   # strict JSON output demanded
 
 
@@ -73,31 +85,47 @@ def test_build_prompt_includes_prior_fix_as_fewshot():
 # --- parse_patch ----------------------------------------------------------
 
 def test_parse_patch_valid_json():
-    patch = parse_patch(VALID_JSON, incident_id="inc-1",
-                        model="gemini-3.5-flash", latency_ms=1200)
+    patch = _parse(VALID_JSON)
     assert patch.root_cause.startswith("Vendor renamed")
+    # diff is computed by difflib from the full file and is appliable
     assert "temperature_celsius" in patch.unified_diff
+    assert patch.unified_diff.startswith("--- a/buggy_agent.py")
     assert patch.repro_test.startswith("def test_weather")
     assert patch.incident_id == "inc-1"
     assert patch.model_used == "gemini-3.5-flash"
     assert patch.latency_ms == 1200
 
 
+def test_parse_patch_computed_diff_applies():
+    from omniforge.healer.patcher import apply_unified_diff
+    patch = _parse(VALID_JSON)
+    out = apply_unified_diff(ORIGINAL_SRC, patch.unified_diff,
+                             filename="buggy_agent.py")
+    assert out == FIXED_SRC
+
+
 def test_parse_patch_strips_markdown_fences():
     fenced = "```json\n" + VALID_JSON + "\n```"
-    patch = parse_patch(fenced, incident_id="inc-1", model="m", latency_ms=1)
+    patch = _parse(fenced)
     assert "temperature_celsius" in patch.unified_diff
 
 
 def test_parse_patch_malformed_raises():
     with pytest.raises(PatchGenerationError):
-        parse_patch("not json at all", incident_id="i", model="m", latency_ms=1)
+        _parse("not json at all")
 
 
 def test_parse_patch_missing_key_raises():
-    bad = json.dumps({"root_cause": "x"})  # no diff / test
+    bad = json.dumps({"root_cause": "x"})  # no fixed_source / test
     with pytest.raises(PatchGenerationError):
-        parse_patch(bad, incident_id="i", model="m", latency_ms=1)
+        _parse(bad)
+
+
+def test_parse_patch_noop_fix_raises():
+    same = json.dumps({"root_cause": "x", "fixed_source": ORIGINAL_SRC,
+                       "repro_test": "t"})
+    with pytest.raises(PatchGenerationError):
+        _parse(same)
 
 
 # --- generate_patch (orchestration) --------------------------------------

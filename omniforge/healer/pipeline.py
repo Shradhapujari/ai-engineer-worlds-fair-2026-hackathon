@@ -68,7 +68,7 @@ def make_gated_fixer(
                     pass  # stored fix no longer applies; fall through to regen
 
         try:
-            patch = generate_patch(ctx, client=client)
+            patch = generate_patch(ctx, client=client, original_source=original)
             patched = apply_unified_diff(original, patch.unified_diff, filename=fname)
         except (PatchGenerationError, PatchApplyError) as e:
             _escalate(ctx, [f"patch generation/apply failed: {e}"])

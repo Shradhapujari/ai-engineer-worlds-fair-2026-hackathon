@@ -6,35 +6,23 @@ from omniforge.memory.signature import signature_hash
 from omniforge.models.schemas import IncidentContext
 
 ORIGINAL = 'def answer(d):\n    return d["temp_c"]\n'
-
-CLEAN_DIFF = """--- a/weather.py
-+++ b/weather.py
-@@ -1,2 +1,2 @@
- def answer(d):
--    return d["temp_c"]
-+    return d["temperature_celsius"]
-"""
-
-DANGEROUS_DIFF = """--- a/weather.py
-+++ b/weather.py
-@@ -1,2 +1,2 @@
- def answer(d):
--    return d["temp_c"]
-+    return eval(d["temp_c"])
-"""
+CLEAN_FIXED = 'def answer(d):\n    return d["temperature_celsius"]\n'
+DANGEROUS_FIXED = 'def answer(d):\n    return eval(d["temp_c"])\n'
 
 REPRO = 'def test_x():\n    assert True\n'
 
 
 class FakeClient:
-    def __init__(self, diff):
-        self._diff = diff
+    """Returns a full fixed file (new model contract); diagnose computes diff."""
+
+    def __init__(self, fixed_source):
+        self._fixed = fixed_source
         self.calls = 0
 
     def generate_text(self, prompt):
         self.calls += 1
         return json.dumps(
-            {"root_cause": "rc", "unified_diff": self._diff, "repro_test": REPRO}
+            {"root_cause": "rc", "fixed_source": self._fixed, "repro_test": REPRO}
         )
 
 
@@ -61,7 +49,7 @@ def test_clean_patch_returns_patched_source(tmp_path):
     path = _write_source(tmp_path)
     escalations = []
     fixer = make_gated_fixer(
-        client=FakeClient(CLEAN_DIFF),
+        client=FakeClient(CLEAN_FIXED),
         runner=lambda d: (True, "1 passed"),
         on_escalate=lambda ctx, reasons: escalations.append(reasons),
     )
@@ -75,7 +63,7 @@ def test_dangerous_patch_rejected_and_escalated(tmp_path):
     path = _write_source(tmp_path)
     escalations = []
     fixer = make_gated_fixer(
-        client=FakeClient(DANGEROUS_DIFF),
+        client=FakeClient(DANGEROUS_FIXED),
         runner=lambda d: (True, "passed"),  # would pass sandbox, but scan blocks first
         on_escalate=lambda ctx, reasons: escalations.append(reasons),
     )
@@ -88,7 +76,7 @@ def test_sandbox_failure_rejected_and_escalated(tmp_path):
     path = _write_source(tmp_path)
     escalations = []
     fixer = make_gated_fixer(
-        client=FakeClient(CLEAN_DIFF),
+        client=FakeClient(CLEAN_FIXED),
         runner=lambda d: (False, "1 failed: AssertionError"),
         on_escalate=lambda ctx, reasons: escalations.append(reasons),
     )
@@ -97,11 +85,16 @@ def test_sandbox_failure_rejected_and_escalated(tmp_path):
     assert any("sandbox" in r for r in escalations[0])
 
 
-def test_unapplicable_diff_escalates(tmp_path):
+def test_malformed_model_output_escalates(tmp_path):
     path = _write_source(tmp_path)
     escalations = []
+
+    class BadClient:
+        def generate_text(self, prompt):
+            return "not json at all"
+
     fixer = make_gated_fixer(
-        client=FakeClient("this is not a diff"),
+        client=BadClient(),
         on_escalate=lambda ctx, reasons: escalations.append(reasons),
     )
     out = fixer(_ctx(path))
@@ -118,7 +111,7 @@ def _conn(tmp_path):
 def test_first_heal_calls_model_and_remembers(tmp_path):
     path = _write_source(tmp_path)
     conn = _conn(tmp_path)
-    client = FakeClient(CLEAN_DIFF)
+    client = FakeClient(CLEAN_FIXED)
     fixer = make_gated_fixer(client=client, runner=lambda d: (True, "passed"),
                              conn=conn)
     ctx = _ctx(path)
@@ -133,7 +126,7 @@ def test_repeat_error_heals_from_memory_no_model_call(tmp_path):
     conn = _conn(tmp_path)
     ctx = _ctx(path)
     # seed memory via a first heal
-    make_gated_fixer(client=FakeClient(CLEAN_DIFF),
+    make_gated_fixer(client=FakeClient(CLEAN_FIXED),
                      runner=lambda d: (True, "passed"), conn=conn)(ctx)
     # second occurrence: model must not be called
     fixer = make_gated_fixer(client=ExplodingClient(),

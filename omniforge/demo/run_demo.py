@@ -18,7 +18,6 @@ The fallback keeps the demo path alive if live Gemini hiccups (Constitution II).
 """
 from __future__ import annotations
 
-import difflib
 import json
 import os
 import time
@@ -36,9 +35,9 @@ BUGGY_LINE = '    temp = data["temp_c"]  # breaks when vendor renames the field\
 FIXED_LINE = ('    temp = data.get("temp_c", data.get("temperature_celsius"))'
               "  # tolerate vendor rename\n")
 
-# Self-contained repro: imported as the top-level module the sandbox copies in.
-REPRO = """import buggy_agent
-from omniforge.demo import fake_vendor_api
+# The sandbox runs in overlay mode (patched file at its real package path),
+# so import the module under test via its package path.
+REPRO = """from omniforge.demo import buggy_agent, fake_vendor_api
 
 def test_heals_broken_vendor():
     fake_vendor_api.BROKEN = True
@@ -47,17 +46,13 @@ def test_heals_broken_vendor():
 
 
 class FallbackClient:
-    """Offline stand-in for Gemini: returns a known-good patch as strict JSON."""
+    """Offline stand-in for Gemini: returns the known-good full file as JSON
+    (same contract as the real model — diagnose computes the diff itself)."""
 
-    def __init__(self, original: str, patched: str, filename: str) -> None:
-        diff = "".join(difflib.unified_diff(
-            original.splitlines(keepends=True),
-            patched.splitlines(keepends=True),
-            fromfile=f"a/{filename}", tofile=f"b/{filename}",
-        ))
+    def __init__(self, patched: str) -> None:
         self._json = json.dumps({
             "root_cause": "vendor renamed temp_c -> temperature_celsius",
-            "unified_diff": diff,
+            "fixed_source": patched,
             "repro_test": REPRO,
         })
 
@@ -65,13 +60,13 @@ class FallbackClient:
         return self._json
 
 
-def _build_client(original: str, patched: str):
+def _build_client(patched: str):
     live = os.environ.get("OMNIFORGE_DEMO_LIVE") == "1" and settings.GCP_PROJECT
     if live:
         print("   [using real Gemini via Vertex]")
         return None  # make_gated_fixer falls back to the real Vertex client
     print("   [using offline fallback patch — set OMNIFORGE_DEMO_LIVE=1 for Gemini]")
-    return FallbackClient(original, patched, os.path.basename(AGENT_FILE))
+    return FallbackClient(patched)
 
 
 def main() -> None:
@@ -90,7 +85,7 @@ def main() -> None:
                              settings.CHANGE_WINDOW_SECONDS)
 
     fixer = make_gated_fixer(
-        client=_build_client(original, patched),
+        client=_build_client(patched),
         conn=conn,
         runner=local_runner,
         on_escalate=lambda ctx, reasons: print(f"   ESCALATED: {reasons}"),

@@ -19,10 +19,10 @@
 | 2 | Real patch gen | DONE | M2 Intelligence ✓ | Generated patch heals live break |
 | 3 | Safety rails | DONE | M3 Trustworthy ✓ | Bad patch rejected + escalated |
 | 4 | Memory / continual learning | DONE | M4 Self-Improve ✓ | Cache hit = instant fix, no model call |
-| 5 | Rollback + circuit breaker | PLANNED | M5 Safe | Regression auto-rolls-back |
+| 5 | Rollback + circuit breaker | DONE | M5 Safe ✓ | Regression auto-rolls-back |
 | 6 | Demo + video | PLANNED | M6 Ship | Two clean run-throughs |
 
-**Overall:** 5/7 phases done. Next = Phase 5 (rollback + circuit breaker + audit).
+**Overall:** 6/7 phases done. Next = Phase 6 (demo + 1-min video) — non-code: rehearse, record, README tag.
 
 ---
 
@@ -85,14 +85,15 @@
 **Exit gate:** cache hit = instant fix, no model call ✓ — repeat signature heals from SQLite, model client never invoked, hit_count ticks up.
 
 ## Phase 5 — Rollback + Circuit Breaker + Audit
-**Status:** PLANNED · **Milestone:** M5 Safe · **Depends:** P4
+**Status:** DONE · **Milestone:** M5 Safe ✓ · **Depends:** P4
 **Goal:** containment + polish.
-- ☐ Rollback guard (`healer/rollback.py`): re-run input, regression → auto-rollback
-- ☐ Circuit breaker: per-window change cap
-- ☐ Kill switch (global)
-- ☐ Append-only audit log (only observability surface)
-- ☐ Polish
-**Exit gate:** regression auto-rolls-back.
+- ☑ Rollback guard: post-swap re-run of the trigger input; regression → `supervisor.rollback` (revert source + reload) + escalate. Lived in `guard.call` since P1; covered by `test_bad_patch_rolls_back_and_escalates`.
+- ☑ Circuit breaker (`healer/rollback.py::CircuitBreaker`): rolling-window cap on autonomous changes; injectable clock; Guard records a change on apply, denies + escalates when open.
+- ☑ Kill switch (`kill_switch_engaged`): global stop via env `OMNIFORGE_KILL=1` or flag file; Guard escalates without touching source.
+- ☑ Append-only audit log (`AuditLog`, JSONL): every outcome recorded (healed/rolled_back/escalated/kill_switch/circuit_open) — the only observability surface.
+- ☑ Wired into Guard via optional `breaker`/`kill_switch`/`audit_log` params (back-compatible).
+- ☑ TDD: rollback(7) + guard containment(4) = 11 new tests, 72 total green.
+**Exit gate:** regression auto-rolls-back ✓; bad patch reverted + escalated; kill switch + breaker block autonomous change; audit log persists every outcome.
 
 ## Phase 6 — Demo + Video
 **Status:** PLANNED · **When:** due Sun 12:00 · **Milestone:** M6 Ship · **Depends:** P5
@@ -122,6 +123,7 @@
 
 ## Changelog
 
+- 2026-06-27 — **Phase 5 DONE (M5 ✓).** Containment built TDD: `healer/rollback.py` — `CircuitBreaker` (rolling-window change cap, injectable clock), `kill_switch_engaged` (env/flag-file global stop), `AuditLog` (append-only JSONL, the only observability surface). Wired into `proxy/guard.py` via optional back-compatible `breaker`/`kill_switch`/`audit_log` params: gates checked before any change, change recorded on apply, every outcome audited. Live rollback-on-regression already in `guard.call` since P1. +11 tests (72 total). **All 6 build phases done — only Phase 6 (demo/video, non-code) remains.**
 - 2026-06-27 — **Phase 4 DONE (M4 ✓).** Fix-memory built TDD: `memory/store.py` gains `remember`/`lookup`/`save_incident`/`save_patch`/`hit_count` (JSON-serialized dict fields, idempotent upserts, COALESCE preserves hits on re-remember). `pipeline.make_gated_fixer(conn=...)` short-circuits the model on a signature hit — reuses the stored diff, re-verifies in the sandbox, zero model cost; remembers every fresh validated fix. +8 tests (61 total) incl. ExplodingClient asserting no model call on cache hit. Next: Phase 5 rollback/breaker/audit.
 - 2026-06-27 — **Phase 3 DONE (M3 ✓).** Trust boundary built TDD: `healer/scanner.py` (policy gate: scope/size/self-edit/dangerous-sinks/network-import denylist + best-effort bandit), `healer/sandbox.py` (injectable runner; `local_runner` subprocess-pytest fallback since no Docker), `healer/pipeline.py` (`make_gated_fixer` wires diagnose→patch→scan→sandbox into Guard's Fixer contract; any gate fail → escalate, never deploy). +20 unit tests (53 total) all green. bandit installed; semgrep/Docker deferred (heavy/absent) — local fallbacks keep demo path alive. Next: Phase 4 memory.
 - 2026-06-27 — roadmap promoted to living doc; phases + milestones + checklists added.

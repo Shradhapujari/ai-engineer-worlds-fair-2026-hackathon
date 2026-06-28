@@ -29,7 +29,7 @@ GOOGLE_CLOUD_PROJECT=ai-hack-sf26sfo-7019 GOOGLE_CLOUD_LOCATION=global \
 TDD: every functionality has a test under `omniforge/tests/`. Live tests (`@pytest.mark.live`) hit real Gemini and are deselected by default.
 
 ## Status
-Phase 0 (Setup) — scaffolding, SQLite init, breakable demo. See [roadmap](constitution/roadmap.md).
+Phases 0–5 done (6/7) — full self-heal loop: catch → Gemini patch → security scan + sandbox → hot-swap → fix-memory (cache hits skip the model) → circuit breaker + kill switch + append-only audit. 72 unit + 2 live tests green. Only Phase 6 (demo + video) remains. See [roadmap](constitution/roadmap.md).
 
 ## Built at the event
 All code under `omniforge/` was built during the hackathon.

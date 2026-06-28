@@ -3,6 +3,7 @@ import sys
 
 import pytest
 
+from omniforge.healer.rollback import AuditLog, CircuitBreaker
 from omniforge.proxy.guard import Guard, Escalated
 
 
@@ -66,3 +67,42 @@ def test_fixer_receives_incident_context(mod):
     Guard(mod, "answer", fixer=fixer).answer({"temperature_celsius": 1})
     assert seen["err"] == "KeyError"
     assert seen["fn"] == "answer"
+
+
+# --- Phase 5: containment ---
+
+def test_kill_switch_blocks_healing(mod):
+    called = []
+    g = Guard(mod, "answer",
+              fixer=lambda ctx: called.append(1) or FIXED,
+              kill_switch=lambda: True)
+    with pytest.raises(Escalated, match="kill switch"):
+        g.answer({"temperature_celsius": 22})
+    assert called == []                       # fixer never ran
+    assert g.audit[0]["status"] == "kill_switch"
+    assert 'd["temp_c"]' in open(mod.__file__).read()  # source untouched
+
+
+def test_circuit_breaker_blocks_when_open(mod):
+    cb = CircuitBreaker(max_changes=0, window_seconds=60)  # no changes allowed
+    g = Guard(mod, "answer", fixer=lambda ctx: FIXED, breaker=cb)
+    with pytest.raises(Escalated, match="circuit breaker"):
+        g.answer({"temperature_celsius": 22})
+    assert g.audit[0]["status"] == "circuit_open"
+
+
+def test_breaker_records_change_then_caps(mod):
+    cb = CircuitBreaker(max_changes=1, window_seconds=60)
+    g = Guard(mod, "answer", fixer=lambda ctx: FIXED, breaker=cb)
+    assert g.answer({"temperature_celsius": 22}) == "temp=22"  # 1st heal allowed
+    assert not cb.allow()                                      # cap now reached
+
+
+def test_audit_log_persists_outcomes(mod, tmp_path):
+    log = AuditLog(str(tmp_path / "audit.jsonl"))
+    g = Guard(mod, "answer", fixer=lambda ctx: FIXED, audit_log=log)
+    g.answer({"temperature_celsius": 22})
+    entries = log.entries()
+    assert len(entries) == 1
+    assert entries[0]["status"] == "healed"
+    assert "ts" in entries[0]

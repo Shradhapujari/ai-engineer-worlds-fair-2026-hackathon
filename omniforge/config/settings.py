@@ -17,6 +17,11 @@ GEMINI_MODEL = os.environ.get("OMNIFORGE_MODEL", "gemini-3.5-flash")
 # Fix memory — local SQLite file on the droplet
 DB_PATH = os.environ.get("OMNIFORGE_DB", "omniforge.db")
 
+# Containment (Phase 5): append-only audit log + autonomous-change cap per window
+AUDIT_LOG = os.environ.get("OMNIFORGE_AUDIT_LOG", "omniforge_audit.jsonl")
+MAX_CHANGES_PER_WINDOW = int(os.environ.get("OMNIFORGE_MAX_CHANGES", "5"))
+CHANGE_WINDOW_SECONDS = float(os.environ.get("OMNIFORGE_CHANGE_WINDOW", "60"))
+
 # Safety (Phase 1): keep hardcoded-fix fallback available so a live model
 # hiccup can't kill the demo (Constitution II).
 USE_HARDCODED_FALLBACK = os.environ.get("OMNIFORGE_FALLBACK", "1") == "1"

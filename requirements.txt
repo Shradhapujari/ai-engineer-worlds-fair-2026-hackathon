@@ -1,0 +1,11 @@
+# OmniForge — runtime deps. Local pip only, no hosted services (Constitution IV).
+# Patch generation — Gemini via Vertex AI (ADC auth)
+google-genai>=0.3.0
+google-auth>=2.28
+# Data models
+pydantic>=2.6
+# Security scan (Phase 3)
+semgrep>=1.60
+bandit>=1.7
+# Test runner used in sandbox (Phase 3)
+pytest>=8.0

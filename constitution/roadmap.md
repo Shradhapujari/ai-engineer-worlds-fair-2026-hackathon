@@ -14,7 +14,7 @@
 
 | Phase | Title | Feature | Error class | Status | Exit gate |
 |---|---|---|---|---|---|
-| 0 | Scaffold | dirs + runner + fixtures | — | PLANNED | valid call runs E2E under Guard |
+| 0 | Scaffold | dirs + runner + fixtures | — | DONE | valid call runs E2E under Guard |
 | 1 | Tool-call parser | parse JSON → ToolCall | `KeyError` / JSON `ValueError` | PLANNED | bug healed + cache hit |
 | 2 | Registry + dispatch | name → callable | unknown-tool `KeyError` | PLANNED | bug healed + cache hit |
 | 3 | Arg validation | coerce args to signature | `TypeError` / `ValueError` | PLANNED | bug healed + cache hit |
@@ -22,18 +22,18 @@
 | 5 | Result formatting | format + 2-step chain | `AttributeError` (None) / `KeyError` | PLANNED | bug healed + cache hit |
 | 6 | Heal-coverage matrix | run all fixtures + harden | all of the above | PLANNED | matrix all green; regression auto-rolls-back |
 
-**Overall:** 0/7 phases done.
+**Overall:** 1/7 phases done.
 
 ---
 
 ## Phase 0 — Scaffold
-**Status:** PLANNED · **Depends:** —
+**Status:** DONE · **When:** 2026-06-28 · **Depends:** —
 **Goal:** stand up the agent skeleton and the OmniForge seam.
-- ☐ Dirs: `agent/`, `tests/`, `test-data/`
-- ☐ `runner.py` — adds OmniForge repo to `sys.path`, imports `omniforge.proxy.guard`, wraps `agent.run.run(call)` with the Guard
-- ☐ Load fixtures from `test-data/` (valid + kv data)
-- ☐ Happy-path smoke: a valid tool call returns the correct result with the agent alone (no proxy)
-**Exit gate:** a valid call runs end-to-end under the Guard; agent runs standalone too.
+- ☑ Dirs: `agent/`, `tests/`, `test-data/`
+- ☑ `runner.py` — adds OmniForge repo to `sys.path`, imports `omniforge.proxy.guard`, wraps `agent.run.run(call)` with the Guard
+- ☑ Load fixtures from `test-data/` (valid + kv data)
+- ☑ Happy-path smoke: a valid tool call returns the correct result with the agent alone (no proxy)
+**Exit gate:** a valid call runs end-to-end under the Guard ✓; agent runs standalone too ✓. 10 tests green (happy 4 + bug repro 5 + Guard pass-through 1).
 
 ## Phase 1 — Tool-call Parser  (error class: `KeyError` / JSON `ValueError`)
 **Status:** PLANNED · **Depends:** P0

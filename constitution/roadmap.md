@@ -96,13 +96,13 @@
 **Exit gate:** regression auto-rolls-back ✓; bad patch reverted + escalated; kill switch + breaker block autonomous change; audit log persists every outcome.
 
 ## Phase 6 — Demo + Video
-**Status:** PLANNED · **When:** due Sun 12:00 · **Milestone:** M6 Ship · **Depends:** P5
+**Status:** IN PROGRESS · **When:** due Sun 12:00 · **Milestone:** M6 Ship · **Depends:** P5
 **Goal:** tight live pitch.
-- ☐ Demo script per §8 (work → break vendor live → heal → cache-hit kicker → audit/kill-switch line)
-- ☐ 1-min video
-- ☐ README: tag event-built work
-- ☐ Rehearse 2x
-- ☐ Pre-demo compliance check (constitution governance)
+- ☑ Demo script per §8 (`demo/run_demo.py`): work → break vendor live → heal (patch→scan→sandbox→hot-swap) → cache-hit kicker (no model call, hit_count++) → audit/kill-switch/breaker line. Offline fallback patch keeps demo path alive; `OMNIFORGE_DEMO_LIVE=1` uses real Gemini. Verified offline: heal 0.72s → cache-hit 0.47s, source auto-restored (repeatable).
+- ☑ README: tag event-built work (status updated to Phases 0–5 done).
+- ☐ 1-min video *(manual — record stage run)*
+- ☐ Rehearse 2x *(manual)*
+- ☐ Pre-demo compliance check (constitution governance) *(manual)*
 **Exit gate:** two clean run-throughs.
 
 ---
@@ -123,6 +123,7 @@
 
 ## Changelog
 
+- 2026-06-27 — **Phase 6 IN PROGRESS.** Stage-ready demo runner (`demo/run_demo.py`) exercises the full loop end-to-end: work → break vendor → raw crash → heal (patch/scan/sandbox/hot-swap) → same-error cache hit (no model call, hit_count++) → audit/kill-switch/breaker. Offline `FallbackClient` (Constitution II demo-path safety) + real Gemini via `OMNIFORGE_DEMO_LIVE=1`; agent source auto-restored so runs repeat. `sandbox.local_runner` now sets PYTHONPATH so repro_tests can import prod modules (local stand-in for "sandbox mirrors prod deps"). Verified offline (heal 0.72s, cache-hit 0.47s). +1 test (73 total). Remaining (manual): record 1-min video, rehearse 2x, compliance check.
 - 2026-06-27 — **Phase 5 DONE (M5 ✓).** Containment built TDD: `healer/rollback.py` — `CircuitBreaker` (rolling-window change cap, injectable clock), `kill_switch_engaged` (env/flag-file global stop), `AuditLog` (append-only JSONL, the only observability surface). Wired into `proxy/guard.py` via optional back-compatible `breaker`/`kill_switch`/`audit_log` params: gates checked before any change, change recorded on apply, every outcome audited. Live rollback-on-regression already in `guard.call` since P1. +11 tests (72 total). **All 6 build phases done — only Phase 6 (demo/video, non-code) remains.**
 - 2026-06-27 — **Phase 4 DONE (M4 ✓).** Fix-memory built TDD: `memory/store.py` gains `remember`/`lookup`/`save_incident`/`save_patch`/`hit_count` (JSON-serialized dict fields, idempotent upserts, COALESCE preserves hits on re-remember). `pipeline.make_gated_fixer(conn=...)` short-circuits the model on a signature hit — reuses the stored diff, re-verifies in the sandbox, zero model cost; remembers every fresh validated fix. +8 tests (61 total) incl. ExplodingClient asserting no model call on cache hit. Next: Phase 5 rollback/breaker/audit.
 - 2026-06-27 — **Phase 3 DONE (M3 ✓).** Trust boundary built TDD: `healer/scanner.py` (policy gate: scope/size/self-edit/dangerous-sinks/network-import denylist + best-effort bandit), `healer/sandbox.py` (injectable runner; `local_runner` subprocess-pytest fallback since no Docker), `healer/pipeline.py` (`make_gated_fixer` wires diagnose→patch→scan→sandbox into Guard's Fixer contract; any gate fail → escalate, never deploy). +20 unit tests (53 total) all green. bandit installed; semgrep/Docker deferred (heavy/absent) — local fallbacks keep demo path alive. Next: Phase 4 memory.

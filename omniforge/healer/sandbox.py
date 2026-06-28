@@ -24,10 +24,17 @@ Runner = Callable[[str], tuple]
 
 
 def local_runner(workdir: str) -> tuple:
-    """Run pytest over a workdir in a subprocess. No Docker required."""
+    """Run pytest over a workdir in a subprocess. No Docker required.
+
+    The app's package is made importable inside the sandbox (PYTHONPATH =
+    current project root) so a repro_test can import prod modules — the local
+    stand-in for "the Docker sandbox mirrors prod deps" (spec §2.7).
+    """
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.getcwd() + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", "-q", workdir],
-        capture_output=True, text=True, cwd=workdir,
+        capture_output=True, text=True, cwd=workdir, env=env,
     )
     return proc.returncode == 0, proc.stdout + proc.stderr
 

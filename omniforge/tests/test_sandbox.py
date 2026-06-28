@@ -66,3 +66,15 @@ def test_local_runner_real_pytest_patched_passes_original_fails():
     assert res.passed                  # repro green on patched source
     assert "passed" in res.after
     assert "passed" not in res.before  # original (buggy) source failed the repro
+
+
+def test_local_runner_can_import_app_package_in_sandbox():
+    # repro that imports a prod module — proves PYTHONPATH wiring (spec §2.7)
+    repro = (
+        "from omniforge.memory.signature import signature_hash\n"
+        "def test_import():\n"
+        "    assert signature_hash('x')\n"
+    )
+    res = validate(_patch(repro), _ctx("weather.py"),
+                   patched_source="x = 1", runner=local_runner)
+    assert res.passed

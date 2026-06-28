@@ -1,0 +1,42 @@
+{
+  "description": "Maps each fixture to its phase, the error class it triggers, and the expected behavior after OmniForge heals it. Drives the Phase 6 coverage matrix.",
+  "valid": "valid_calls.json",
+  "kv_data": "kv_data.json",
+  "cases": [
+    {
+      "phase": 1,
+      "fixture": "buggy/missing_name.json",
+      "error_class": "KeyError",
+      "trigger": "parser reads obj['name'] on an object that has no 'name' key",
+      "expected_after_heal": "parser handles the missing key gracefully (escalate/skip), no crash"
+    },
+    {
+      "phase": 2,
+      "fixture": "buggy/unknown_tool.json",
+      "error_class": "KeyError",
+      "trigger": "registry[name] lookup for a tool ('translate') that is not registered",
+      "expected_after_heal": "dispatch returns a clean 'unknown tool' result instead of crashing"
+    },
+    {
+      "phase": 3,
+      "fixture": "buggy/bad_types.json",
+      "error_class": "TypeError",
+      "trigger": "string 'two' flows into integer arithmetic without coercion/validation",
+      "expected_after_heal": "args coerced or rejected with a clear validation error, no TypeError"
+    },
+    {
+      "phase": 4,
+      "fixture": "buggy/divide_zero.json",
+      "error_class": "ZeroDivisionError",
+      "trigger": "calculator divide does a / b with b == 0 and no guard",
+      "expected_after_heal": "divide-by-zero handled (error result), no crash"
+    },
+    {
+      "phase": 5,
+      "fixture": "buggy/none_result.json",
+      "error_class": "AttributeError",
+      "trigger": "formatter assumes a non-None dict result; kv_lookup miss returns None",
+      "expected_after_heal": "formatter handles a None/missing result, returns a 'not found' answer"
+    }
+  ]
+}

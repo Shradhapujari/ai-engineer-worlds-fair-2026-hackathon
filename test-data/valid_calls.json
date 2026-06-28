@@ -1,0 +1,6 @@
+[
+  { "name": "calculator", "arguments": { "op": "add", "a": 2, "b": 3 } },
+  { "name": "calculator", "arguments": { "op": "divide", "a": 10, "b": 4 } },
+  { "name": "unit_convert", "arguments": { "value": 100, "from": "cm", "to": "m" } },
+  { "name": "kv_lookup", "arguments": { "key": "capital_of_france" } }
+]
